@@ -1,0 +1,1 @@
+sed -i '/fun updateTransaction(transaction: Transaction)/i \    fun addCategory(name: String) {\n        viewModelScope.launch {\n            repository.addCategory(name)\n        }\n    }\n' app/src/main/java/com/example/financetracker/ui/FinanceViewModel.kt
