@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -6,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.financetracker.data.Category
 import com.example.financetracker.data.Transaction
 import com.example.financetracker.repository.FinanceRepository
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.asStateFlow
@@ -14,12 +16,54 @@ import kotlinx.coroutines.launch
 class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() {
 
     init {
-        viewModelScope.launch {
-            repository.ensureSalaryCategoryExists()
-        }
+        checkAndInjectMonthlySalary()
     }
 
-    
+    fun checkAndInjectMonthlySalary() {
+        // Check and inject monthly salary
+        viewModelScope.launch {
+            val prefs = repository.context.getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+            val salaryStr = prefs.getString("salary_per_month", "")
+            if (!salaryStr.isNullOrEmpty()) {
+                val salaryAmount = salaryStr.toDoubleOrNull() ?: 0.0
+                if (salaryAmount > 0) {
+                    val cal = java.util.Calendar.getInstance()
+                    val currentMonth = cal.get(java.util.Calendar.MONTH)
+                    val currentYear = cal.get(java.util.Calendar.YEAR)
+                    cal.set(java.util.Calendar.DAY_OF_MONTH, 1)
+                    cal.set(java.util.Calendar.HOUR_OF_DAY, 0)
+                    cal.set(java.util.Calendar.MINUTE, 0)
+                    cal.set(java.util.Calendar.SECOND, 0)
+                    cal.set(java.util.Calendar.MILLISECOND, 0)
+                    val firstDayTs = cal.timeInMillis
+
+                    repository.ensureSalaryCategoryExists()
+                    val cats = repository.allCategories.first()
+                    val salaryCat = cats.find { it.name.equals("Salary", ignoreCase = true) }
+                    val salaryCatId = salaryCat?.id ?: 0
+
+                    val txns = repository.getTransactionsBetween(firstDayTs, firstDayTs + 86400000L * 31).first()
+                    val existingSalaryTxn = txns.find { it.type == "Credit" && it.note == "Monthly Salary" }
+
+                    if (existingSalaryTxn != null) {
+                        if (existingSalaryTxn.amount != salaryAmount) {
+                            repository.updateTransaction(existingSalaryTxn.copy(amount = salaryAmount, categoryId = salaryCatId))
+                        }
+                    } else {
+                        repository.processNewTransaction(
+                            amount = salaryAmount,
+                            type = "Credit",
+                            note = "Monthly Salary",
+                            timestamp = firstDayTs,
+                            manualCategoryId = salaryCatId
+                        )
+                    }
+                }
+            }
+        }
+
+    }
+
     val transactions: kotlinx.coroutines.flow.StateFlow<List<com.example.financetracker.data.Transaction>> = repository.allTransactions.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5000),

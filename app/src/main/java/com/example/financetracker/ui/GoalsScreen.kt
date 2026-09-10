@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -93,13 +94,17 @@ fun GoalsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
         }
         
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Savings Goals", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+            Text("Savings Goals", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 16.dp))
             IconButton(onClick = { showAddDialog = true }) {
                 Icon(Icons.Default.Add, contentDescription = "Add Goal")
             }
         }
         
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val view = androidx.compose.ui.platform.LocalView.current
+        val isHapticsEnabled = com.example.financetracker.theme.LocalHapticEnabled.current
+        LaunchedEffect(listState.firstVisibleItemIndex) { if(isHapticsEnabled) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK) }
+        LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
             items(goals) { goal ->
                 GoalItem(
                     goal = goal,
@@ -241,12 +246,16 @@ fun GoalsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
                     
                     if (compensateBudget == null) {
                         Text("Select a budget:")
-                        LazyColumn(modifier = Modifier.height(200.dp)) {
+                        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val view = androidx.compose.ui.platform.LocalView.current
+        val isHapticsEnabled = com.example.financetracker.theme.LocalHapticEnabled.current
+        LaunchedEffect(listState.firstVisibleItemIndex) { if(isHapticsEnabled) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK) }
+        LazyColumn(state = listState, modifier = Modifier.height(200.dp)) {
                             val availableCats = categories.filter { !it.name.equals("Salary", ignoreCase = true) }
                             items(availableCats) { cat ->
                                 val bud = currentMonthBudgets[cat]
                                 if (bud != null && bud.amount > 0) {
-                                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).clickable { compensateBudget = bud }) {
+                                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp).bounceClick { compensateBudget = bud }) {
                                         Row(modifier = Modifier.padding(12.dp).fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                                             Text(cat.name)
                                             Text("₹${"%.2f".format(bud.amount)}")
@@ -315,8 +324,8 @@ fun GoalItem(goal: Goal, overallRemaining: Double, onEdit: () -> Unit, onDelete:
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(goal.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
                 Row {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.clickable { onEdit() }.padding(end=8.dp), tint = Color.Gray)
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.clickable { onDelete() }, tint = Color.Red)
+                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.bounceClick { onEdit() }.padding(end=8.dp), tint = Color.Gray)
+                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.bounceClick { onDelete() }, tint = Color.Red)
                 }
             }
             Text("Target Date: $dateString", color = Color.Gray, fontSize = 12.sp)

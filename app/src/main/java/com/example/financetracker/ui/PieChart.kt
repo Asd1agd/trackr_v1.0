@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size

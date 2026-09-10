@@ -1,6 +1,10 @@
 package com.example.financetracker.repository
 
 import android.content.Context
+
+import androidx.glance.appwidget.updateAll
+import com.example.financetracker.AllowanceWidget
+
 import android.content.SharedPreferences
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,8 +20,9 @@ import com.example.financetracker.data.Category
 import com.example.financetracker.data.Transaction
 import com.example.financetracker.data.TransactionDao
 
+
 class FinanceRepository(
-    private val context: Context,
+    val context: Context,
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val budgetDao: BudgetDao,
@@ -25,6 +30,17 @@ class FinanceRepository(
 ) {
     val allTransactions = transactionDao.getAllTransactions()
     val allCategories = categoryDao.getAllCategories()
+
+    private suspend fun updateWidget() {
+        try {
+            AllowanceWidget().updateAll(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun getTransactionsBetween(start: Long, end: Long) = transactionDao.getTransactionsBetween(start, end)
+    suspend fun insertTransaction(txn: Transaction) { transactionDao.insert(txn); updateWidget() }
 
     private val prefs: SharedPreferences = context.getSharedPreferences("finance_prefs", Context.MODE_PRIVATE)
     
@@ -106,6 +122,7 @@ class FinanceRepository(
             isSubscription = isSubscription
         )
         transactionDao.insert(newTransaction)
+        updateWidget()
     }
 
     suspend fun addCategory(name: String) {
@@ -114,10 +131,12 @@ class FinanceRepository(
 
     suspend fun updateTransaction(transaction: Transaction) {
         transactionDao.update(transaction)
+        updateWidget()
     }
 
     suspend fun deleteTransaction(transaction: Transaction) {
         transactionDao.delete(transaction)
+        updateWidget()
     }
 }
 // Will overwrite using sed instead

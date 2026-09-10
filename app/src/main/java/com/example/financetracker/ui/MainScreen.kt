@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -16,11 +17,16 @@ import com.example.financetracker.data.Transaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(viewModel: FinanceViewModel) {
-    var selectedTab by remember { mutableStateOf(0) }
+fun MainScreen(viewModel: FinanceViewModel, startWithAddDialog: Boolean = false) {
+    var selectedTab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
     val transactions by viewModel.transactions.collectAsState()
     val categories by viewModel.categories.collectAsState()
-    var showAddDialog by remember { mutableStateOf(false) }
+    var showAddDialog by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(startWithAddDialog) }
+    var showProfileSettings by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
+    if (showProfileSettings) {
+        ProfileSettingsScreen(onBack = { showProfileSettings = false }, onSave = { showProfileSettings = false; viewModel.checkAndInjectMonthlySalary() })
+        return
+    }
 
     Scaffold(
         bottomBar = {
@@ -66,7 +72,7 @@ fun MainScreen(viewModel: FinanceViewModel) {
     ) { padding ->
         val modifier = Modifier.padding(padding)
         if (selectedTab == 0) {
-            DashboardScreen(viewModel, modifier, onNavigateToTransactions = { selectedTab = 1 })
+            DashboardScreen(viewModel, modifier, onNavigateToTransactions = { selectedTab = 1 }, onOpenProfile = { showProfileSettings = true })
         } else if (selectedTab == 1) {
             TransactionsScreen(viewModel, modifier)
         } else if (selectedTab == 2) {
@@ -78,7 +84,7 @@ fun MainScreen(viewModel: FinanceViewModel) {
         }
     }
 
-    var showYamlDialog by remember { mutableStateOf(false) }
+    var showYamlDialog by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(false) }
 
     if (showYamlDialog) {
         YamlDialog(viewModel = viewModel, onDismiss = { showYamlDialog = false })

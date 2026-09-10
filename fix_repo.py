@@ -1,18 +1,28 @@
-with open('app/src/main/java/com/example/financetracker/repository/FinanceRepository.kt', 'r') as f:
+with open("app/src/main/java/com/example/financetracker/repository/FinanceRepository.kt", "r") as f:
     content = f.read()
 
-bad_imports = """
-import android.content.Context
-import android.content.SharedPreferences
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-
+bad_func = """
+    private suspend fun updateWidget() {
+        try {
+            AllowanceWidget().updateAll(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 """
-content = content.replace(bad_imports, '')
-content = content.replace(
-    'package com.example.financetracker.repository',
-    'package com.example.financetracker.repository\n' + bad_imports
-)
+content = content.replace(bad_func, "")
 
-with open('app/src/main/java/com/example/financetracker/repository/FinanceRepository.kt', 'w') as f:
+# insert it inside the class
+good_func = """
+    private suspend fun updateWidget() {
+        try {
+            AllowanceWidget().updateAll(context)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+"""
+content = content.replace("val allCategories = categoryDao.getAllCategories()", "val allCategories = categoryDao.getAllCategories()\n" + good_func)
+
+with open("app/src/main/java/com/example/financetracker/repository/FinanceRepository.kt", "w") as f:
     f.write(content)

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.changedToDown
+import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import com.example.financetracker.data.FinanceDatabase
 import com.example.financetracker.repository.FinanceRepository
 import com.example.financetracker.ui.FinanceViewModel
@@ -55,18 +60,74 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+
+        val prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
+        val openAddDialog = intent.getBooleanExtra("openAddDialog", false)
+        
         setContent {
-            FinanceTrackerTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    var showSplash by remember { mutableStateOf(true) }
+            var themeMode by remember { mutableStateOf(prefs.getString("theme_mode", "System Default") ?: "System Default") }
+            var themeColorInt by remember { mutableStateOf(prefs.getInt("theme_color", 0)) }
+            var isHapticsEnabled by remember { mutableStateOf(prefs.getBoolean("haptics_enabled", true)) }
+            
+            // Listen to changes
+            DisposableEffect(Unit) {
+                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
+                    if (key == "theme_mode") {
+                        themeMode = sharedPreferences.getString("theme_mode", "System Default") ?: "System Default"
+                    } else if (key == "theme_color") {
+                        themeColorInt = sharedPreferences.getInt("theme_color", 0)
+                    } else if (key == "haptics_enabled") {
+                        isHapticsEnabled = sharedPreferences.getBoolean("haptics_enabled", true)
+                    }
+                }
+                prefs.registerOnSharedPreferenceChangeListener(listener)
+                onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
+            }
+            
+            val isDark = when (themeMode) {
+                "Dark Mode" -> true
+                "Light Mode" -> false
+                else -> androidx.compose.foundation.isSystemInDarkTheme()
+            }
+            
+            val primaryColor = if (themeColorInt != 0) Color(themeColorInt) else null
+
+            FinanceTrackerTheme(darkTheme = isDark, primaryColor = primaryColor) {
+                androidx.compose.runtime.CompositionLocalProvider(com.example.financetracker.theme.LocalHapticEnabled provides isHapticsEnabled) {
+
+                val view = androidx.compose.ui.platform.LocalView.current
+                var lastY by remember { mutableStateOf(0f) }
+                Surface(
+                    modifier = Modifier.fillMaxSize()
+                        .pointerInput(isHapticsEnabled) {
+                            awaitPointerEventScope {
+                                while (true) {
+                                    val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                                    val change = event.changes.firstOrNull()
+                                    if (change != null) {
+                                        if (change.changedToDownIgnoreConsumed()) {
+                                            view.playSoundEffect(android.view.SoundEffectConstants.CLICK)
+                                            if (isHapticsEnabled) {
+                                                view.performHapticFeedback(android.view.HapticFeedbackConstants.KEYBOARD_TAP)
+                                            }
+                                            lastY = change.position.y
+                                        }
+                                    }
+                                }
+                            }
+                        }, 
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    var showSplash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(!openAddDialog) }
                     
                     if (showSplash) {
                         SplashScreen(onTimeout = { showSplash = false })
                     } else {
-                        MainScreen(viewModel = viewModel)
+                        MainScreen(viewModel = viewModel, startWithAddDialog = openAddDialog)
                     }
                 }
             }
+        }
         }
     }
 }

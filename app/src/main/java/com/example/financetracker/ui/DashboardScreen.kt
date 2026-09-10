@@ -1,4 +1,10 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
+
+
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
@@ -25,7 +31,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, onNavigateToTransactions: () -> Unit = {}) {
+fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, onNavigateToTransactions: () -> Unit = {}, onOpenProfile: () -> Unit = {}) {
     val transactions by viewModel.transactions.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val budgets by viewModel.budgets.collectAsState()
@@ -107,11 +113,26 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
     
     val todaysAllowance = dailyBudget - essentialSpentToday
 
-    Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+    
+    val scrollState = androidx.compose.foundation.rememberScrollState()
+    var isProfileVisible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(scrollState.isScrollInProgress) {
+        if (scrollState.isScrollInProgress) {
+            isProfileVisible = true
+        } else {
+            kotlinx.coroutines.delay(3000)
+            isProfileVisible = false
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
+
         
         // Essential Daily Budget Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { showEssentialCatsDialog = true },
+            modifier = Modifier.fillMaxWidth().padding(16.dp).bounceClick { showEssentialCatsDialog = true },
             elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
@@ -167,7 +188,7 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
             shape = RoundedCornerShape(24.dp)
         ) {
             Column(modifier = Modifier.padding(20.dp)) {
-                Text("Dashboard", fontSize = 24.sp, fontWeight = FontWeight.ExtraBold)
+                Text("Dashboard", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 16.dp))
                 
                 Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Daily", "Weekly", "Monthly").forEach { filter ->
@@ -212,7 +233,7 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
         
         // Category Pie Chart Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { showEssentialCatsDialog = true },
+            modifier = Modifier.fillMaxWidth().padding(16.dp).bounceClick { showEssentialCatsDialog = true },
             elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
             shape = RoundedCornerShape(24.dp)
         ) {
@@ -288,7 +309,7 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
                         catIdMap.entries.sortedByDescending { it.value }.forEachIndexed { index, entry ->
                             val cName = categories.find { it.id == entry.key }?.name ?: "Other"
                             val pct = (entry.value / totalSum) * 100
-                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).clickable {
+                            Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp).bounceClick {
                                 viewModel.setCategoryFilter(entry.key)
                                 onNavigateToTransactions()
                             }) {
@@ -395,6 +416,22 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
         }
     }
 
+    
+        androidx.compose.animation.AnimatedVisibility(
+            visible = isProfileVisible,
+            enter = androidx.compose.animation.fadeIn() + androidx.compose.animation.scaleIn(),
+            exit = androidx.compose.animation.fadeOut() + androidx.compose.animation.scaleOut(),
+            modifier = Modifier.align(Alignment.TopEnd).padding(16.dp)
+        ) {
+            IconButton(
+                onClick = onOpenProfile,
+                modifier = Modifier.background(MaterialTheme.colorScheme.primaryContainer, androidx.compose.foundation.shape.CircleShape)
+            ) {
+                Icon(androidx.compose.material.icons.Icons.Default.Person, contentDescription = "Profile")
+            }
+        }
+    } // close Box
+
     if (showEssentialCatsDialog) {
         var tempSelected by remember { mutableStateOf(essentialCatIds.toSet()) }
         AlertDialog(
@@ -403,7 +440,7 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
             text = {
                 Column(modifier = Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
                     categories.forEach { cat ->
-                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().clickable {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth().bounceClick {
                             tempSelected = if (tempSelected.contains(cat.id)) tempSelected - cat.id else tempSelected + cat.id
                         }.padding(vertical = 4.dp)) {
                             Checkbox(checked = tempSelected.contains(cat.id), onCheckedChange = { 
@@ -425,4 +462,5 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
             }
         )
     }
-}
+
+        }

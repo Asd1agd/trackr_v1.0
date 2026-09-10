@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -79,10 +80,14 @@ fun BudgetsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
         
         Text("Manage Monthly Budgets", fontSize = 20.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
         
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val view = androidx.compose.ui.platform.LocalView.current
+        val isHapticsEnabled = com.example.financetracker.theme.LocalHapticEnabled.current
+        LaunchedEffect(listState.firstVisibleItemIndex) { if(isHapticsEnabled) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK) }
+        LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
             items(categories.filter { !it.name.equals("Salary", ignoreCase = true) }) { cat ->
                 val bAmt = currentMonthBudgets[cat] ?: 0.0
-                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).clickable { 
+                Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).bounceClick { 
                     showBudgetDialog = cat 
                     budgetAmountInput = if (bAmt > 0) bAmt.toString() else ""
                 }, elevation = CardDefaults.cardElevation(defaultElevation = 8.dp), shape = RoundedCornerShape(16.dp)) {

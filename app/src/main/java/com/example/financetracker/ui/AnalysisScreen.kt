@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -36,10 +37,11 @@ fun AnalysisScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
     
     var timeFrame by remember { mutableStateOf("Week") } // Week, Month, Year
     var selectedGraph by remember { mutableStateOf("Category") } // Category, IncomeOutgo, SalarySpendSavings
+    val view = androidx.compose.ui.platform.LocalView.current
     var offsetCycle by remember { mutableStateOf(0) }
     
     Column(modifier = modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        Text("Analysis", fontSize = 24.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(16.dp))
+        Text("Analysis", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(start = 16.dp, top = 32.dp, bottom = 16.dp))
         
         Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf("Week", "Month", "Year").forEach { tf ->
@@ -62,8 +64,10 @@ fun AnalysisScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
                 onDragEnd = {
                     if (swipeThreshold > 50) {
                         offsetCycle -= 1
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                     } else if (swipeThreshold < -50) {
                         offsetCycle += 1
+                        view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK)
                     }
                     swipeThreshold = 0f
                 }

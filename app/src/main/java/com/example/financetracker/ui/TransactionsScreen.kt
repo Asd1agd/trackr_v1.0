@@ -1,4 +1,5 @@
 package com.example.financetracker.ui
+import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -43,7 +44,11 @@ fun TransactionsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifie
             }
         }
         
-        LazyColumn(modifier = Modifier.weight(1f)) {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        val view = androidx.compose.ui.platform.LocalView.current
+        val isHapticsEnabled = com.example.financetracker.theme.LocalHapticEnabled.current
+        LaunchedEffect(listState.firstVisibleItemIndex) { if(isHapticsEnabled) view.performHapticFeedback(android.view.HapticFeedbackConstants.CLOCK_TICK) }
+        LazyColumn(state = listState, modifier = Modifier.weight(1f)) {
             items(displayTxns) { txn ->
 
                 TransactionItem(
@@ -104,7 +109,7 @@ fun TransactionItem(transaction: Transaction, categoryName: String, onClick: () 
     val dateString = formatter.format(Date(transaction.timestamp))
     
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).clickable { onClick() },
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).bounceClick { onClick() },
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp)
     ) {
@@ -124,8 +129,8 @@ fun TransactionItem(transaction: Transaction, categoryName: String, onClick: () 
                 fontSize = 18.sp
             )
             Row {
-                Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.padding(start = 8.dp).clickable { onClick() }, tint = Color.Gray)
-                Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.padding(start = 8.dp).clickable { onDelete() }, tint = Color.Red)
+                Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.padding(start = 8.dp).bounceClick { onClick() }, tint = Color.Gray)
+                Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.padding(start = 8.dp).bounceClick { onDelete() }, tint = Color.Red)
             }
         }
     }
