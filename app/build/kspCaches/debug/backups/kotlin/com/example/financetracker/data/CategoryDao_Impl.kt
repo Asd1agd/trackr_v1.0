@@ -9,9 +9,9 @@ import androidx.sqlite.SQLiteStatement
 import javax.`annotation`.processing.Generated
 import kotlin.Boolean
 import kotlin.Int
+import kotlin.Long
 import kotlin.String
 import kotlin.Suppress
-import kotlin.Unit
 import kotlin.collections.List
 import kotlin.collections.MutableList
 import kotlin.collections.mutableListOf
@@ -42,9 +42,10 @@ public class CategoryDao_Impl(
     }
   }
 
-  public override suspend fun insert(category: Category): Unit = performSuspending(__db, false,
+  public override suspend fun insert(category: Category): Long = performSuspending(__db, false,
       true) { _connection ->
-    __insertAdapterOfCategory.insert(_connection, category)
+    val _result: Long = __insertAdapterOfCategory.insertAndReturnId(_connection, category)
+    _result
   }
 
   public override fun getAllCategories(): Flow<List<Category>> {

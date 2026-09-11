@@ -27,6 +27,7 @@ import java.util.*
 
 @Composable
 fun TransactionsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     val transactions by viewModel.transactions.collectAsState()
     val categoryFilter by viewModel.selectedCategoryFilter.collectAsState()
     val categories by viewModel.categories.collectAsState()
@@ -125,7 +126,7 @@ fun TransactionsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifie
                 transactionToEdit = null
             },
             onAddCategory = { newCategory ->
-                viewModel.addCategory(newCategory)
+                viewModel.addCategory(newCategory) { added -> if (!added) android.widget.Toast.makeText(context, "Category already exists, using existing", android.widget.Toast.LENGTH_SHORT).show() }
             }
         )
     }

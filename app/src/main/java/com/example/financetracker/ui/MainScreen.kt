@@ -26,6 +26,7 @@ import com.example.financetracker.data.Transaction
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(viewModel: FinanceViewModel, startWithAddDialog: Boolean = false) {
+    val context = androidx.compose.ui.platform.LocalContext.current
     var selectedTab by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(0) }
     val transactions by viewModel.transactions.collectAsState()
     val categories by viewModel.categories.collectAsState()
@@ -134,7 +135,7 @@ fun MainScreen(viewModel: FinanceViewModel, startWithAddDialog: Boolean = false)
                 showAddDialog = false
             },
             onAddCategory = { newCategory ->
-                viewModel.addCategory(newCategory)
+                viewModel.addCategory(newCategory) { added -> if (!added) android.widget.Toast.makeText(context, "Category already exists, using existing", android.widget.Toast.LENGTH_SHORT).show() }
             }
         )
     }

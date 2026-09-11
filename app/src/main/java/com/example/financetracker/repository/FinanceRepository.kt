@@ -126,8 +126,13 @@ class FinanceRepository(
         updateWidget()
     }
 
-    suspend fun addCategory(name: String) {
-        categoryDao.insert(Category(name = name, keywords = ""))
+
+    suspend fun addCategory(name: String): com.example.financetracker.data.Category {
+        val existing = categoryDao.getCategoriesSync().find { it.name.equals(name, ignoreCase = true) }
+        if (existing != null) return existing
+        val newCat = com.example.financetracker.data.Category(name = name, keywords = "")
+        val id = categoryDao.insert(newCat).toInt()
+        return newCat.copy(id = id)
     }
 
     suspend fun updateTransaction(transaction: Transaction) {

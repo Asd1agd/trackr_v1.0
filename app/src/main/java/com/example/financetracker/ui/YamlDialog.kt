@@ -268,60 +268,16 @@ budgets:
                     coroutineScope.launch {
                         try {
                             if (yamlText.isNotBlank()) {
-                                val map = Yaml().load<Map<String, Any>>(yamlText)
-                                
-                                val txns = map["transactions"] as? List<Map<String, Any>>
-                                txns?.forEach { tMap ->
-                                    val amount = (tMap["amount"] as? Number)?.toDouble() ?: 0.0
-                                    val type = (tMap["type"] as? String) ?: "Debit"
-                                    val note = (tMap["note"] as? String) ?: ""
-                                    val catName = (tMap["category"] as? String) ?: "Other"
-                                    val ts = (tMap["timestamp"] as? Number)?.toLong() ?: System.currentTimeMillis()
-                                    
-                                    var cat = viewModel.categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                                    if (cat == null) {
-                                        viewModel.addCategory(catName)
-                                        kotlinx.coroutines.delay(100) // wait for DB insert
-                                        cat = viewModel.categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                                    }
-                                    viewModel.addManualTransactionWithCategory(amount, type, note, ts, cat?.id)
+                                val success = viewModel.importYamlData(yamlText, "pasted_data.txt")
+                                if (success) {
+                                    android.widget.Toast.makeText(context, "Import successful", android.widget.Toast.LENGTH_SHORT).show()
+                                    onDismiss()
+                                } else {
+                                    android.widget.Toast.makeText(context, "file is not in proper spacing or format of requred yaml ckeck that format in the yaml input section", android.widget.Toast.LENGTH_LONG).show()
                                 }
-                                
-                                val gls = map["goals"] as? List<Map<String, Any>>
-                                gls?.forEach { gMap ->
-                                    val name = (gMap["name"] as? String) ?: "Unnamed"
-                                    val targetAmt = (gMap["targetAmount"] as? Number)?.toDouble() ?: 0.0
-                                    val savedAmt = (gMap["savedAmount"] as? Number)?.toDouble() ?: 0.0
-                                    val targetDate = (gMap["targetDate"] as? Number)?.toLong() ?: 0L
-                                    viewModel.addGoal(name, targetAmt, targetDate, savedAmt)
-                                }
-                                
-                                val bdgts = map["budgets"] as? List<Map<String, Any>>
-                                bdgts?.forEach { bMap ->
-                                    val catName = (bMap["category"] as? String) ?: "Other"
-                                    val amount = (bMap["amount"] as? Number)?.toDouble() ?: 0.0
-                                    val month = (bMap["month"] as? Number)?.toInt() ?: Calendar.getInstance().get(Calendar.MONTH)
-                                    val year = (bMap["year"] as? Number)?.toInt() ?: Calendar.getInstance().get(Calendar.YEAR)
-                                    
-                                    var cat = viewModel.categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                                    if (cat == null) {
-                                        viewModel.addCategory(catName)
-                                        kotlinx.coroutines.delay(100)
-                                        cat = viewModel.categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                                    }
-                                    cat?.let { c ->
-                                        val existing = viewModel.budgets.value.find { it.categoryId == c.id && it.month == month && it.year == year }
-                                        if (existing != null) {
-                                            viewModel.saveBudget(existing.copy(amount = amount))
-                                        } else {
-                                            viewModel.saveBudget(Budget(categoryId = c.id, amount = amount, month = month, year = year))
-                                        }
-                                    }
-                                }
-                                onDismiss()
                             }
                         } catch (e: Exception) {
-                            showMessage = "Import failed: ${e.message}"
+                            android.widget.Toast.makeText(context, "file is not in proper spacing or format of requred yaml ckeck that format in the yaml input section", android.widget.Toast.LENGTH_LONG).show()
                         }
                     }
                 }) { Text("Import") }

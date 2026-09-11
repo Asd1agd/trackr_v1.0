@@ -136,9 +136,15 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
         }
     }
 
-    fun addCategory(name: String) {
+    fun addCategory(name: String, onResult: (Boolean) -> Unit = {}) {
         viewModelScope.launch {
-            repository.addCategory(name)
+            val exists = repository.allCategories.first().any { it.name.equals(name, ignoreCase = true) }
+            if (!exists) {
+                repository.addCategory(name)
+                onResult(true)
+            } else {
+                onResult(false)
+            }
         }
     }
 
@@ -191,14 +197,7 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
                 val catName = (tMap["category"] as? String) ?: "Other"
                 val ts = (tMap["timestamp"] as? Number)?.toLong() ?: System.currentTimeMillis()
                 
-                var cat = categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                if (cat == null) {
-                    addCategory(catName)
-                    kotlinx.coroutines.delay(100) // wait for DB insert
-                    cat = categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                }
-                
-                val finalCategoryId = cat?.id
+                val finalCategoryId = repository.addCategory(catName).id
                 val isSubscription = note.lowercase().contains("subscription") || note.lowercase().contains("netflix") || note.lowercase().contains("spotify")
                 val txn = com.example.financetracker.data.Transaction(
                     amount = amount,
@@ -228,15 +227,8 @@ class FinanceViewModel(private val repository: FinanceRepository) : ViewModel() 
                 val month = (bMap["month"] as? Number)?.toInt() ?: java.util.Calendar.getInstance().get(java.util.Calendar.MONTH)
                 val year = (bMap["year"] as? Number)?.toInt() ?: java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
                 
-                var cat = categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                if (cat == null) {
-                    addCategory(catName)
-                    kotlinx.coroutines.delay(100)
-                    cat = categories.value.find { it.name.equals(catName, ignoreCase = true) }
-                }
-                cat?.let { c ->
-                    repository.saveBudget(com.example.financetracker.data.Budget(categoryId = c.id, amount = amount, month = month, year = year, importId = importId))
-                }
+                val c = repository.addCategory(catName)
+                repository.saveBudget(com.example.financetracker.data.Budget(categoryId = c.id, amount = amount, month = month, year = year, importId = importId))
             }
             return true
         } catch (e: Exception) {
