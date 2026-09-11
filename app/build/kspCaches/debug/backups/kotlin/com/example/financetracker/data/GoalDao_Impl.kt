@@ -34,7 +34,7 @@ public class GoalDao_Impl(
     this.__db = __db
     this.__insertAdapterOfGoal = object : EntityInsertAdapter<Goal>() {
       protected override fun createQuery(): String =
-          "INSERT OR ABORT INTO `goals` (`id`,`name`,`targetAmount`,`currentAmount`,`targetDate`) VALUES (nullif(?, 0),?,?,?,?)"
+          "INSERT OR ABORT INTO `goals` (`id`,`name`,`targetAmount`,`currentAmount`,`targetDate`,`importId`) VALUES (nullif(?, 0),?,?,?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: Goal) {
         statement.bindLong(1, entity.id.toLong())
@@ -42,11 +42,17 @@ public class GoalDao_Impl(
         statement.bindDouble(3, entity.targetAmount)
         statement.bindDouble(4, entity.currentAmount)
         statement.bindLong(5, entity.targetDate)
+        val _tmpImportId: Int? = entity.importId
+        if (_tmpImportId == null) {
+          statement.bindNull(6)
+        } else {
+          statement.bindLong(6, _tmpImportId.toLong())
+        }
       }
     }
     this.__updateAdapterOfGoal = object : EntityDeleteOrUpdateAdapter<Goal>() {
       protected override fun createQuery(): String =
-          "UPDATE OR ABORT `goals` SET `id` = ?,`name` = ?,`targetAmount` = ?,`currentAmount` = ?,`targetDate` = ? WHERE `id` = ?"
+          "UPDATE OR ABORT `goals` SET `id` = ?,`name` = ?,`targetAmount` = ?,`currentAmount` = ?,`targetDate` = ?,`importId` = ? WHERE `id` = ?"
 
       protected override fun bind(statement: SQLiteStatement, entity: Goal) {
         statement.bindLong(1, entity.id.toLong())
@@ -54,7 +60,13 @@ public class GoalDao_Impl(
         statement.bindDouble(3, entity.targetAmount)
         statement.bindDouble(4, entity.currentAmount)
         statement.bindLong(5, entity.targetDate)
-        statement.bindLong(6, entity.id.toLong())
+        val _tmpImportId: Int? = entity.importId
+        if (_tmpImportId == null) {
+          statement.bindNull(6)
+        } else {
+          statement.bindLong(6, _tmpImportId.toLong())
+        }
+        statement.bindLong(7, entity.id.toLong())
       }
     }
   }
@@ -79,6 +91,7 @@ public class GoalDao_Impl(
         val _columnIndexOfTargetAmount: Int = getColumnIndexOrThrow(_stmt, "targetAmount")
         val _columnIndexOfCurrentAmount: Int = getColumnIndexOrThrow(_stmt, "currentAmount")
         val _columnIndexOfTargetDate: Int = getColumnIndexOrThrow(_stmt, "targetDate")
+        val _columnIndexOfImportId: Int = getColumnIndexOrThrow(_stmt, "importId")
         val _result: MutableList<Goal> = mutableListOf()
         while (_stmt.step()) {
           val _item: Goal
@@ -92,10 +105,31 @@ public class GoalDao_Impl(
           _tmpCurrentAmount = _stmt.getDouble(_columnIndexOfCurrentAmount)
           val _tmpTargetDate: Long
           _tmpTargetDate = _stmt.getLong(_columnIndexOfTargetDate)
-          _item = Goal(_tmpId,_tmpName,_tmpTargetAmount,_tmpCurrentAmount,_tmpTargetDate)
+          val _tmpImportId: Int?
+          if (_stmt.isNull(_columnIndexOfImportId)) {
+            _tmpImportId = null
+          } else {
+            _tmpImportId = _stmt.getLong(_columnIndexOfImportId).toInt()
+          }
+          _item =
+              Goal(_tmpId,_tmpName,_tmpTargetAmount,_tmpCurrentAmount,_tmpTargetDate,_tmpImportId)
           _result.add(_item)
         }
         _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun deleteByImportId(importId: Int) {
+    val _sql: String = "DELETE FROM goals WHERE importId = ?"
+    return performSuspending(__db, false, true) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindLong(_argIndex, importId.toLong())
+        _stmt.step()
       } finally {
         _stmt.close()
       }

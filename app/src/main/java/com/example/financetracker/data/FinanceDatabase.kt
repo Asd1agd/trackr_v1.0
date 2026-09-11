@@ -8,6 +8,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN importId INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE goals ADD COLUMN importId INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE budgets ADD COLUMN importId INTEGER DEFAULT NULL")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `import_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `filename` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)")
+    }
+}
 val MIGRATION_2_3 = object : Migration(2, 3) {
     override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE categories ADD COLUMN isEssential INTEGER NOT NULL DEFAULT 0")
@@ -25,12 +34,13 @@ val MIGRATION_1_2 = object : Migration(1, 2) {
     }
 }
 
-@Database(entities = [Transaction::class, Category::class, Budget::class, Goal::class], version = 3, exportSchema = false)
+@Database(entities = [Transaction::class, Category::class, Budget::class, Goal::class, ImportLog::class], version = 4, exportSchema = false)
 abstract class FinanceDatabase : RoomDatabase() {
     abstract fun transactionDao(): TransactionDao
     abstract fun categoryDao(): CategoryDao
     abstract fun budgetDao(): BudgetDao
     abstract fun goalDao(): GoalDao
+    abstract fun importLogDao(): ImportLogDao
 
     companion object {
         @Volatile
@@ -39,7 +49,7 @@ abstract class FinanceDatabase : RoomDatabase() {
         fun getDatabase(context: Context): FinanceDatabase {
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context.applicationContext, FinanceDatabase::class.java, "finance_database")
-                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                    .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                     .fallbackToDestructiveMigration()
                     .addCallback(object : RoomDatabase.Callback() {
                         override fun onCreate(db: SupportSQLiteDatabase) {

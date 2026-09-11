@@ -9,5 +9,6 @@ data class Budget(
     val categoryId: Int,
     val amount: Double,
     val month: Int,
-    val year: Int
+    val year: Int,
+    val importId: Int? = null
 )

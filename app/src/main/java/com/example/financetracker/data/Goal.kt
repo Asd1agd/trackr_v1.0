@@ -9,5 +9,6 @@ data class Goal(
     val name: String,
     val targetAmount: Double,
     val currentAmount: Double = 0.0,
-    val targetDate: Long
+    val targetDate: Long,
+    val importId: Int? = null
 )

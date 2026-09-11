@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,10 +87,14 @@ fun GoalsScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier) {
 
     Column(modifier = modifier.fillMaxSize()) {
         Card(modifier = Modifier.fillMaxWidth().padding(16.dp), elevation = CardDefaults.cardElevation(defaultElevation = 12.dp), shape = RoundedCornerShape(24.dp), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
-            Column(modifier = Modifier.padding(20.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Salary, Budgets & Goals", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                Text(text = "₹${"%.2f".format(overallRemaining)} Remaining", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = if (overallRemaining >= 0) MaterialTheme.colorScheme.primary else Color.Red)
-                Text("Salary: ₹${"%.2f".format(currentSalary)} | Budgets: ₹${"%.2f".format(totalBudget)} | Goals: ₹${"%.2f".format(totalGoalsMonthlyRequirement)}/mo", fontSize = 12.sp)
+            Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Salary, Budgets & Goals", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(text = "₹${"%.2f".format(overallRemaining)} Remaining", fontSize = 28.sp, fontWeight = FontWeight.ExtraBold, color = if (overallRemaining >= 0) MaterialTheme.colorScheme.primary else Color.Red, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Salary: ₹${"%.2f".format(currentSalary)}", fontSize = 13.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Budgets: ₹${"%.2f".format(totalBudget)} | Goals: ₹${"%.2f".format(totalGoalsMonthlyRequirement)}/mo", fontSize = 13.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         
@@ -316,17 +321,17 @@ fun GoalItem(goal: Goal, overallRemaining: Double, onEdit: () -> Unit, onDelete:
     val formatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
     val dateString = formatter.format(Date(goal.targetDate))
     
-    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    Card(modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).bounceClick(
+            onClick = onEdit,
+            onLongClick = onDelete
+        ),
         elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp).fillMaxWidth()) {
             Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(goal.name, fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Row {
-                    Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.bounceClick { onEdit() }.padding(end=8.dp), tint = Color.Gray)
-                    Icon(Icons.Default.Delete, contentDescription = "Delete", modifier = Modifier.bounceClick { onDelete() }, tint = Color.Red)
-                }
+                Icon(Icons.Default.Edit, contentDescription = "Edit", modifier = Modifier.bounceClick(onClick = onEdit).padding(end=8.dp), tint = Color.Gray)
             }
             Text("Target Date: $dateString", color = Color.Gray, fontSize = 12.sp)
             Spacer(modifier = Modifier.height(8.dp))

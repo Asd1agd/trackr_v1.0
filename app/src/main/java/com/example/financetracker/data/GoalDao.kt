@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface GoalDao {
+    @Query("DELETE FROM goals WHERE importId = :importId")
+    suspend fun deleteByImportId(importId: Int)
     @Query("SELECT * FROM goals")
     fun getAllGoals(): Flow<List<Goal>>
 

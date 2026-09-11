@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface BudgetDao {
+    @Query("DELETE FROM budgets WHERE importId = :importId")
+    suspend fun deleteByImportId(importId: Int)
     @Query("SELECT * FROM budgets")
     fun getAllBudgets(): Flow<List<Budget>>
 
@@ -23,4 +25,7 @@ interface BudgetDao {
     
     @Query("SELECT * FROM budgets WHERE categoryId = :categoryId AND month = :month AND year = :year LIMIT 1")
     suspend fun getBudget(categoryId: Int, month: Int, year: Int): Budget?
+
+    @Query("SELECT * FROM budgets WHERE month = :month AND year = :year")
+    suspend fun getBudgetsForMonthSync(month: Int, year: Int): List<Budget>
 }

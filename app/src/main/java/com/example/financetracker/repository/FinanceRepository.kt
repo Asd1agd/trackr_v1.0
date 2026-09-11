@@ -26,7 +26,8 @@ class FinanceRepository(
     private val transactionDao: TransactionDao,
     private val categoryDao: CategoryDao,
     private val budgetDao: BudgetDao,
-    private val goalDao: GoalDao
+    private val goalDao: GoalDao,
+    private val importLogDao: com.example.financetracker.data.ImportLogDao
 ) {
     val allTransactions = transactionDao.getAllTransactions()
     val allCategories = categoryDao.getAllCategories()
@@ -138,5 +139,19 @@ class FinanceRepository(
         transactionDao.delete(transaction)
         updateWidget()
     }
+
+    val allImportLogs = importLogDao.getAllImportLogs()
+
+    suspend fun insertImportLog(filename: String, timestamp: Long): Int {
+        val log = com.example.financetracker.data.ImportLog(filename = filename, timestamp = timestamp)
+        return importLogDao.insert(log).toInt()
+    }
+
+    suspend fun deleteImportLog(id: Int) {
+        transactionDao.deleteByImportId(id)
+        goalDao.deleteByImportId(id)
+        budgetDao.deleteByImportId(id)
+        importLogDao.delete(id)
+        updateWidget()
+    }
 }
-// Will overwrite using sed instead

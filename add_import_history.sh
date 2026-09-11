@@ -1,0 +1,51 @@
+cat << 'INNER' > insert.txt
+
+            // ── Import History Section ──
+            Spacer(modifier = Modifier.height(20.dp))
+            Text(
+                "Import History",
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
+            )
+            
+            val importLogs by viewModel.importLogs.collectAsState()
+            
+            if (importLogs.isEmpty()) {
+                Text("No imported files.", fontSize = 14.sp, color = androidx.compose.ui.graphics.Color.Gray, modifier = Modifier.padding(start = 4.dp))
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    importLogs.forEach { log ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(log.filename, fontWeight = FontWeight.Bold, fontSize = 15.sp, maxLines = 1, overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis)
+                                    val dateStr = java.text.SimpleDateFormat("dd MMM yyyy, hh:mm a", java.util.Locale.getDefault()).format(java.util.Date(log.timestamp))
+                                    Text(dateStr, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                }
+                                IconButton(onClick = { viewModel.deleteImportLog(log.id) }) {
+                                    Icon(androidx.compose.material.icons.Icons.Default.Delete, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(80.dp))
+INNER
+
+sed -i '/Spacer(modifier = Modifier.height(48.dp))/r insert.txt' app/src/main/java/com/example/financetracker/ui/ProfileSettingsScreen.kt
+sed -i '/Spacer(modifier = Modifier.height(48.dp))/d' app/src/main/java/com/example/financetracker/ui/ProfileSettingsScreen.kt
+
+# Also need to import Icons.Default.Delete in ProfileSettingsScreen if not already there, wait I fully qualified it: androidx.compose.material.icons.Icons.Default.Delete

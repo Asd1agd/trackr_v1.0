@@ -129,23 +129,27 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
     Box(modifier = modifier.fillMaxSize()) {
         Column(modifier = Modifier.fillMaxSize().verticalScroll(scrollState)) {
 
-        
         // Essential Daily Budget Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp).bounceClick { showEssentialCatsDialog = true },
-            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 12.dp).bounceClick { showEssentialCatsDialog = true },
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
             shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)
         ) {
-            Column(modifier = Modifier.padding(20.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Today's Allowance", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+            Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Today's Allowance", fontSize = 14.sp, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = if (todaysAllowance >= 0) "₹${"%.2f".format(todaysAllowance)}" else "₹${"%.2f".format(todaysAllowance)} (Overspent!)",
-                    fontSize = 28.sp, 
-                    fontWeight = FontWeight.ExtraBold, 
-                    color = if (todaysAllowance >= 0) MaterialTheme.colorScheme.primary else Color.Red
+                    text = if (todaysAllowance >= 0) "₹${"%.2f".format(todaysAllowance)}" else "₹${"%.2f".format(todaysAllowance)}",
+                    fontSize = 36.sp, 
+                    fontWeight = FontWeight.Bold, 
+                    color = if (todaysAllowance >= 0) MaterialTheme.colorScheme.primary else Color(0xFFFF5252)
                 )
-                Text("Based on monthly budget & total spend", fontSize = 12.sp)
+                if (todaysAllowance < 0) {
+                    Text("Overspent!", fontSize = 12.sp, color = Color(0xFFFF5252), fontWeight = FontWeight.Medium)
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text("Based on monthly budget & total spend", fontSize = 11.sp, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.5f))
             }
         }
 
@@ -166,16 +170,16 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
         
         if (budgetAlerts.isNotEmpty()) {
             Card(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 6.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+                shape = RoundedCornerShape(20.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF3E0))
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("⚠️ Budget Alerts", fontWeight = FontWeight.Bold, color = Color(0xFFE65100))
-                    Spacer(modifier = Modifier.height(4.dp))
+                    Text("⚠️ Budget Alerts", fontWeight = FontWeight.SemiBold, color = Color(0xFFE65100))
+                    Spacer(modifier = Modifier.height(6.dp))
                     budgetAlerts.forEach { alert ->
-                        Text(alert, color = Color(0xFFE65100), fontSize = 14.sp)
+                        Text(alert, color = Color(0xFFBF360C), fontSize = 13.sp, modifier = Modifier.padding(vertical = 2.dp))
                     }
                 }
             }
@@ -183,62 +187,76 @@ fun DashboardScreen(viewModel: FinanceViewModel, modifier: Modifier = Modifier, 
 
         // Summary Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-            shape = RoundedCornerShape(24.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp),
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Text("Dashboard", fontSize = 36.sp, fontWeight = FontWeight.ExtraBold, modifier = Modifier.padding(bottom = 16.dp))
+            Column(modifier = Modifier.padding(24.dp)) {
+                Text("Overview", fontSize = 22.sp, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 16.dp))
                 
-                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     listOf("Daily", "Weekly", "Monthly").forEach { filter ->
                         FilterChip(
                             selected = currentFilter == filter,
                             onClick = { currentFilter = filter },
-                            label = { Text(filter) }
+                            label = { Text(filter, fontSize = 13.sp) },
+                            shape = RoundedCornerShape(20.dp)
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     Column {
-                        Text("Inflow", color = Color(0xFF4CAF50), fontWeight = FontWeight.SemiBold)
-                        Text("₹${"%.2f".format(totalInflow)}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                        Text("Inflow", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                        Text("₹${"%.2f".format(totalInflow)}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
-                    Column {
-                        Text("Outflow", color = Color(0xFFF44336), fontWeight = FontWeight.SemiBold)
-                        Text("₹${"%.2f".format(totalOutflow)}", fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text("Outflow", color = Color(0xFFFF5252), fontWeight = FontWeight.Medium, fontSize = 13.sp)
+                        Text("₹${"%.2f".format(totalOutflow)}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
                     }
                 }
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(16.dp))
                 
-                // Income vs Expense Chart
+                // Rounded Income vs Expense bars
                 val maxVal = maxOf(totalInflow, totalOutflow).coerceAtLeast(1.0)
                 val inFraction = (totalInflow / maxVal).toFloat()
                 val outFraction = (totalOutflow / maxVal).toFloat()
                 
-                Canvas(modifier = Modifier.fillMaxWidth().height(40.dp)) {
+                Canvas(modifier = Modifier.fillMaxWidth().height(44.dp)) {
                     val w = size.width
                     val h = size.height
-                    val barH = h / 2f - 4.dp.toPx()
-                    drawRect(color = Color(0xFFE0E0E0), topLeft = Offset(0f, 0f), size = Size(w, barH))
-                    drawRect(color = Color(0xFF4CAF50), topLeft = Offset(0f, 0f), size = Size(w * inFraction, barH))
+                    val barH = h / 2f - 5.dp.toPx()
+                    val cornerRadius = androidx.compose.ui.geometry.CornerRadius(barH / 2f, barH / 2f)
                     
-                    drawRect(color = Color(0xFFE0E0E0), topLeft = Offset(0f, h/2f + 4.dp.toPx()), size = Size(w, barH))
-                    drawRect(color = Color(0xFFF44336), topLeft = Offset(0f, h/2f + 4.dp.toPx()), size = Size(w * outFraction, barH))
+                    drawRoundRect(color = Color(0x20000000), topLeft = Offset(0f, 0f), size = Size(w, barH), cornerRadius = cornerRadius)
+                    if (inFraction > 0.01f) drawRoundRect(color = Color(0xFF4CAF50), topLeft = Offset(0f, 0f), size = Size(w * inFraction, barH), cornerRadius = cornerRadius)
+                    
+                    drawRoundRect(color = Color(0x20000000), topLeft = Offset(0f, h/2f + 5.dp.toPx()), size = Size(w, barH), cornerRadius = cornerRadius)
+                    if (outFraction > 0.01f) drawRoundRect(color = Color(0xFFFF5252), topLeft = Offset(0f, h/2f + 5.dp.toPx()), size = Size(w * outFraction, barH), cornerRadius = cornerRadius)
                 }
-                Text("Avg Spend/Day: ₹${"%.2f".format(avgSpend)}", fontWeight = FontWeight.Medium, modifier = Modifier.padding(top=8.dp))
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Avg Spend/Day: ₹${"%.2f".format(avgSpend)}", 
+                    fontWeight = FontWeight.Medium, 
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
         
         // Category Pie Chart Card
         Card(
-            modifier = Modifier.fillMaxWidth().padding(16.dp).bounceClick { showEssentialCatsDialog = true },
-            elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-            shape = RoundedCornerShape(24.dp)
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 10.dp).bounceClick { showEssentialCatsDialog = true },
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+            shape = RoundedCornerShape(24.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
-            Column(modifier = Modifier.padding(20.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Category Spending", fontSize = 20.sp, fontWeight = FontWeight.ExtraBold)
+            Column(modifier = Modifier.padding(24.dp).fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Category Spending", fontSize = 18.sp, fontWeight = FontWeight.Bold)
                 Row(modifier = Modifier.padding(vertical = 12.dp).horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     val dateLabel = if (customSingleDate != null) SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(customSingleDate!!)) else "Select Date"
                     listOf("Today", dateLabel, "Monthly", "Daily Avg", "Custom Avg").forEach { mode ->

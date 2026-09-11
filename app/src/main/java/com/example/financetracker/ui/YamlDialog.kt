@@ -3,6 +3,7 @@ import com.example.financetracker.theme.bounceClick
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.*
@@ -100,15 +101,15 @@ budgets:
                     TextField(
                         value = yamlText,
                         onValueChange = { yamlText = it },
-                        label = { Text("Paste YAML here") },
-                        placeholder = { Text("Enter YAML here...") },
+                        label = { Text("Paste YAML/TXT here") },
+                        placeholder = { Text("Enter text in YAML format here...") },
                         modifier = Modifier.fillMaxWidth().height(250.dp),
                         maxLines = 20
                     )
                     
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(modifier = Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { filePickerLauncher.launch("*/*") }) {
                             Text("Load File", maxLines = 1)
                         }
@@ -155,16 +156,109 @@ budgets:
                                     if (!trackerDir.exists()) trackerDir.mkdirs()
                                     
                                     val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
-                                    val file = File(trackerDir, "export_$timestamp.yaml")
+                                    val file = File(trackerDir, "export_$timestamp.txt")
                                     file.writeText(yamlStr)
                                     
-                                    showMessage = "Exported to ${file.absolutePath}"
+                                    showMessage = "Exported TXT to ${file.absolutePath}"
                                 } catch (e: Exception) {
                                     showMessage = "Export failed: ${e.message}"
                                 }
                             }
                         }) {
-                            Text("Export All", maxLines = 1)
+                            Text("Export TXT", maxLines = 1)
+                        }
+                        
+                        Button(onClick = {
+                            coroutineScope.launch {
+                                try {
+                                    val pdfDocument = android.graphics.pdf.PdfDocument()
+                                    var pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                                    var page = pdfDocument.startPage(pageInfo)
+                                    var canvas = page.canvas
+                                    var paint = android.graphics.Paint().apply {
+                                        textSize = 12f
+                                        color = android.graphics.Color.BLACK
+                                    }
+                                    var titlePaint = android.graphics.Paint().apply {
+                                        textSize = 18f
+                                        isFakeBoldText = true
+                                        color = android.graphics.Color.BLACK
+                                    }
+                                    var yPosition = 40f
+                                    val margin = 40f
+                                    
+                                    canvas.drawText("Transaction Report", margin, yPosition, titlePaint)
+                                    yPosition += 30f
+                                    
+                                    val txns = viewModel.transactions.value.sortedByDescending { it.timestamp }
+                                    val categories = viewModel.categories.value
+                                    val grouped = txns.groupBy { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(Date(it.timestamp)) }
+                                    
+                                    for ((dateStr, dayTxns) in grouped) {
+                                        if (yPosition > 780f) {
+                                            pdfDocument.finishPage(page)
+                                            pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                                            page = pdfDocument.startPage(pageInfo)
+                                            canvas = page.canvas
+                                            yPosition = 40f
+                                        }
+                                        
+                                        paint.isFakeBoldText = true
+                                        paint.textSize = 14f
+                                        canvas.drawText(dateStr, margin, yPosition, paint)
+                                        yPosition += 20f
+                                        
+                                        paint.isFakeBoldText = false
+                                        paint.textSize = 12f
+                                        
+                                        for (t in dayTxns) {
+                                            if (yPosition > 800f) {
+                                                pdfDocument.finishPage(page)
+                                                pageInfo = android.graphics.pdf.PdfDocument.PageInfo.Builder(595, 842, 1).create()
+                                                page = pdfDocument.startPage(pageInfo)
+                                                canvas = page.canvas
+                                                yPosition = 40f
+                                            }
+                                            val catName = categories.find { c -> c.id == t.categoryId }?.name ?: "Uncategorized"
+                                            val timeStr = SimpleDateFormat("hh:mm a", Locale.getDefault()).format(Date(t.timestamp))
+                                            val amountStr = "${if (t.type == "Credit") "+" else "-"} INR ${t.amount}"
+                                            
+                                            canvas.drawText("$catName - $timeStr", margin, yPosition, paint)
+                                            
+                                            paint.textAlign = android.graphics.Paint.Align.RIGHT
+                                            paint.color = if (t.type == "Credit") android.graphics.Color.rgb(76, 175, 80) else android.graphics.Color.RED
+                                            canvas.drawText(amountStr, 555f, yPosition, paint)
+                                            
+                                            paint.textAlign = android.graphics.Paint.Align.LEFT
+                                            yPosition += 15f
+                                            
+                                            paint.color = android.graphics.Color.DKGRAY
+                                            canvas.drawText(t.note, margin, yPosition, paint)
+                                            paint.color = android.graphics.Color.BLACK
+                                            
+                                            yPosition += 25f
+                                        }
+                                        yPosition += 10f
+                                    }
+                                    
+                                    pdfDocument.finishPage(page)
+                                    
+                                    val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+                                    val trackerDir = File(downloadsDir, "finacial tracker")
+                                    if (!trackerDir.exists()) trackerDir.mkdirs()
+                                    
+                                    val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                                    val file = File(trackerDir, "transactions_$timestamp.pdf")
+                                    file.outputStream().use { pdfDocument.writeTo(it) }
+                                    pdfDocument.close()
+                                    
+                                    showMessage = "Exported PDF to ${file.absolutePath}"
+                                } catch (e: Exception) {
+                                    showMessage = "PDF Export failed: ${e.message}"
+                                }
+                            }
+                        }) {
+                            Text("Export PDF", maxLines = 1)
                         }
                     }
                 }

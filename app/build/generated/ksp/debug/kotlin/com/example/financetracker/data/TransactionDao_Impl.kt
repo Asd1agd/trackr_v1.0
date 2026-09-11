@@ -37,7 +37,7 @@ public class TransactionDao_Impl(
     this.__db = __db
     this.__insertAdapterOfTransaction = object : EntityInsertAdapter<Transaction>() {
       protected override fun createQuery(): String =
-          "INSERT OR ABORT INTO `transactions` (`id`,`amount`,`type`,`timestamp`,`categoryId`,`note`,`isSubscription`,`dueDate`) VALUES (nullif(?, 0),?,?,?,?,?,?,?)"
+          "INSERT OR ABORT INTO `transactions` (`id`,`amount`,`type`,`timestamp`,`categoryId`,`note`,`isSubscription`,`dueDate`,`importId`) VALUES (nullif(?, 0),?,?,?,?,?,?,?,?)"
 
       protected override fun bind(statement: SQLiteStatement, entity: Transaction) {
         statement.bindLong(1, entity.id.toLong())
@@ -58,6 +58,12 @@ public class TransactionDao_Impl(
           statement.bindNull(8)
         } else {
           statement.bindLong(8, _tmpDueDate)
+        }
+        val _tmpImportId: Int? = entity.importId
+        if (_tmpImportId == null) {
+          statement.bindNull(9)
+        } else {
+          statement.bindLong(9, _tmpImportId.toLong())
         }
       }
     }
@@ -70,7 +76,7 @@ public class TransactionDao_Impl(
     }
     this.__updateAdapterOfTransaction = object : EntityDeleteOrUpdateAdapter<Transaction>() {
       protected override fun createQuery(): String =
-          "UPDATE OR ABORT `transactions` SET `id` = ?,`amount` = ?,`type` = ?,`timestamp` = ?,`categoryId` = ?,`note` = ?,`isSubscription` = ?,`dueDate` = ? WHERE `id` = ?"
+          "UPDATE OR ABORT `transactions` SET `id` = ?,`amount` = ?,`type` = ?,`timestamp` = ?,`categoryId` = ?,`note` = ?,`isSubscription` = ?,`dueDate` = ?,`importId` = ? WHERE `id` = ?"
 
       protected override fun bind(statement: SQLiteStatement, entity: Transaction) {
         statement.bindLong(1, entity.id.toLong())
@@ -92,7 +98,13 @@ public class TransactionDao_Impl(
         } else {
           statement.bindLong(8, _tmpDueDate)
         }
-        statement.bindLong(9, entity.id.toLong())
+        val _tmpImportId: Int? = entity.importId
+        if (_tmpImportId == null) {
+          statement.bindNull(9)
+        } else {
+          statement.bindLong(9, _tmpImportId.toLong())
+        }
+        statement.bindLong(10, entity.id.toLong())
       }
     }
   }
@@ -125,6 +137,7 @@ public class TransactionDao_Impl(
         val _columnIndexOfNote: Int = getColumnIndexOrThrow(_stmt, "note")
         val _columnIndexOfIsSubscription: Int = getColumnIndexOrThrow(_stmt, "isSubscription")
         val _columnIndexOfDueDate: Int = getColumnIndexOrThrow(_stmt, "dueDate")
+        val _columnIndexOfImportId: Int = getColumnIndexOrThrow(_stmt, "importId")
         val _result: MutableList<Transaction> = mutableListOf()
         while (_stmt.step()) {
           val _item: Transaction
@@ -154,8 +167,14 @@ public class TransactionDao_Impl(
           } else {
             _tmpDueDate = _stmt.getLong(_columnIndexOfDueDate)
           }
+          val _tmpImportId: Int?
+          if (_stmt.isNull(_columnIndexOfImportId)) {
+            _tmpImportId = null
+          } else {
+            _tmpImportId = _stmt.getLong(_columnIndexOfImportId).toInt()
+          }
           _item =
-              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate)
+              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate,_tmpImportId)
           _result.add(_item)
         }
         _result
@@ -184,6 +203,7 @@ public class TransactionDao_Impl(
         val _columnIndexOfNote: Int = getColumnIndexOrThrow(_stmt, "note")
         val _columnIndexOfIsSubscription: Int = getColumnIndexOrThrow(_stmt, "isSubscription")
         val _columnIndexOfDueDate: Int = getColumnIndexOrThrow(_stmt, "dueDate")
+        val _columnIndexOfImportId: Int = getColumnIndexOrThrow(_stmt, "importId")
         val _result: MutableList<Transaction> = mutableListOf()
         while (_stmt.step()) {
           val _item: Transaction
@@ -213,8 +233,14 @@ public class TransactionDao_Impl(
           } else {
             _tmpDueDate = _stmt.getLong(_columnIndexOfDueDate)
           }
+          val _tmpImportId: Int?
+          if (_stmt.isNull(_columnIndexOfImportId)) {
+            _tmpImportId = null
+          } else {
+            _tmpImportId = _stmt.getLong(_columnIndexOfImportId).toInt()
+          }
           _item =
-              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate)
+              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate,_tmpImportId)
           _result.add(_item)
         }
         _result
@@ -248,6 +274,7 @@ public class TransactionDao_Impl(
         val _columnIndexOfNote: Int = getColumnIndexOrThrow(_stmt, "note")
         val _columnIndexOfIsSubscription: Int = getColumnIndexOrThrow(_stmt, "isSubscription")
         val _columnIndexOfDueDate: Int = getColumnIndexOrThrow(_stmt, "dueDate")
+        val _columnIndexOfImportId: Int = getColumnIndexOrThrow(_stmt, "importId")
         val _result: Transaction?
         if (_stmt.step()) {
           val _tmpId: Int
@@ -276,12 +303,94 @@ public class TransactionDao_Impl(
           } else {
             _tmpDueDate = _stmt.getLong(_columnIndexOfDueDate)
           }
+          val _tmpImportId: Int?
+          if (_stmt.isNull(_columnIndexOfImportId)) {
+            _tmpImportId = null
+          } else {
+            _tmpImportId = _stmt.getLong(_columnIndexOfImportId).toInt()
+          }
           _result =
-              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate)
+              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate,_tmpImportId)
         } else {
           _result = null
         }
         _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun getTransactionsSinceSync(startDate: Long): List<Transaction> {
+    val _sql: String = "SELECT * FROM transactions WHERE timestamp >= ? ORDER BY timestamp DESC"
+    return performSuspending(__db, true, false) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindLong(_argIndex, startDate)
+        val _columnIndexOfId: Int = getColumnIndexOrThrow(_stmt, "id")
+        val _columnIndexOfAmount: Int = getColumnIndexOrThrow(_stmt, "amount")
+        val _columnIndexOfType: Int = getColumnIndexOrThrow(_stmt, "type")
+        val _columnIndexOfTimestamp: Int = getColumnIndexOrThrow(_stmt, "timestamp")
+        val _columnIndexOfCategoryId: Int = getColumnIndexOrThrow(_stmt, "categoryId")
+        val _columnIndexOfNote: Int = getColumnIndexOrThrow(_stmt, "note")
+        val _columnIndexOfIsSubscription: Int = getColumnIndexOrThrow(_stmt, "isSubscription")
+        val _columnIndexOfDueDate: Int = getColumnIndexOrThrow(_stmt, "dueDate")
+        val _columnIndexOfImportId: Int = getColumnIndexOrThrow(_stmt, "importId")
+        val _result: MutableList<Transaction> = mutableListOf()
+        while (_stmt.step()) {
+          val _item: Transaction
+          val _tmpId: Int
+          _tmpId = _stmt.getLong(_columnIndexOfId).toInt()
+          val _tmpAmount: Double
+          _tmpAmount = _stmt.getDouble(_columnIndexOfAmount)
+          val _tmpType: String
+          _tmpType = _stmt.getText(_columnIndexOfType)
+          val _tmpTimestamp: Long
+          _tmpTimestamp = _stmt.getLong(_columnIndexOfTimestamp)
+          val _tmpCategoryId: Int?
+          if (_stmt.isNull(_columnIndexOfCategoryId)) {
+            _tmpCategoryId = null
+          } else {
+            _tmpCategoryId = _stmt.getLong(_columnIndexOfCategoryId).toInt()
+          }
+          val _tmpNote: String
+          _tmpNote = _stmt.getText(_columnIndexOfNote)
+          val _tmpIsSubscription: Boolean
+          val _tmp: Int
+          _tmp = _stmt.getLong(_columnIndexOfIsSubscription).toInt()
+          _tmpIsSubscription = _tmp != 0
+          val _tmpDueDate: Long?
+          if (_stmt.isNull(_columnIndexOfDueDate)) {
+            _tmpDueDate = null
+          } else {
+            _tmpDueDate = _stmt.getLong(_columnIndexOfDueDate)
+          }
+          val _tmpImportId: Int?
+          if (_stmt.isNull(_columnIndexOfImportId)) {
+            _tmpImportId = null
+          } else {
+            _tmpImportId = _stmt.getLong(_columnIndexOfImportId).toInt()
+          }
+          _item =
+              Transaction(_tmpId,_tmpAmount,_tmpType,_tmpTimestamp,_tmpCategoryId,_tmpNote,_tmpIsSubscription,_tmpDueDate,_tmpImportId)
+          _result.add(_item)
+        }
+        _result
+      } finally {
+        _stmt.close()
+      }
+    }
+  }
+
+  public override suspend fun deleteByImportId(importId: Int) {
+    val _sql: String = "DELETE FROM transactions WHERE importId = ?"
+    return performSuspending(__db, false, true) { _connection ->
+      val _stmt: SQLiteStatement = _connection.prepare(_sql)
+      try {
+        var _argIndex: Int = 1
+        _stmt.bindLong(_argIndex, importId.toLong())
+        _stmt.step()
       } finally {
         _stmt.close()
       }

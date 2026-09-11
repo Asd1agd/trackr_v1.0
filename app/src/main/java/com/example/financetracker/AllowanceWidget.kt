@@ -2,7 +2,7 @@ package com.example.financetracker
 
 import android.content.Context
 import android.content.Intent
-import android.content.ComponentName
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.glance.GlanceId
@@ -23,9 +23,7 @@ import androidx.glance.unit.ColorProvider
 import androidx.glance.Button
 import androidx.glance.appwidget.action.actionStartActivity
 import com.example.financetracker.data.FinanceDatabase
-import kotlinx.coroutines.flow.first
 import java.util.Calendar
-import androidx.compose.runtime.*
 
 class AllowanceWidgetReceiver : GlanceAppWidgetReceiver() {
     override val glanceAppWidget: GlanceAppWidget = AllowanceWidget()
@@ -37,7 +35,8 @@ class AllowanceWidget : GlanceAppWidget() {
         val transactionDao = db.transactionDao()
         val categoryDao = db.categoryDao()
         val budgetDao = db.budgetDao()
-        
+
+        // ── Calendar setup (identical to DashboardScreen) ──
         val cal = Calendar.getInstance()
         val currentMonth = cal.get(Calendar.MONTH)
         val currentYear = cal.get(Calendar.YEAR)
@@ -45,62 +44,55 @@ class AllowanceWidget : GlanceAppWidget() {
         val currentDay = cal.get(Calendar.DAY_OF_MONTH)
         val remainingDaysIncludingToday = (maxDays - currentDay + 1).coerceAtLeast(1)
 
-        cal.set(Calendar.DAY_OF_MONTH, 1)
-        cal.set(Calendar.HOUR_OF_DAY, 0)
-        cal.set(Calendar.MINUTE, 0)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
-        val startOfMonth = cal.timeInMillis
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 
-        val endCal = Calendar.getInstance()
-        endCal.set(Calendar.DAY_OF_MONTH, endCal.getActualMaximum(Calendar.DAY_OF_MONTH))
-        endCal.set(Calendar.HOUR_OF_DAY, 23)
-        endCal.set(Calendar.MINUTE, 59)
-        endCal.set(Calendar.SECOND, 59)
-        endCal.set(Calendar.MILLISECOND, 999)
-        val endOfMonth = endCal.timeInMillis
+        val monthStart = Calendar.getInstance().apply {
+            set(Calendar.DAY_OF_MONTH, 1)
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
 
-        val todayCal = Calendar.getInstance()
-        todayCal.set(Calendar.HOUR_OF_DAY, 0)
-        todayCal.set(Calendar.MINUTE, 0)
-        todayCal.set(Calendar.SECOND, 0)
-        todayCal.set(Calendar.MILLISECOND, 0)
-        val todayStart = todayCal.timeInMillis
+        // ── Data fetch using SYNCHRONOUS queries (no Flow caching) ──
+        val transactions = transactionDao.getTransactionsSinceSync(monthStart)
+        val cats = categoryDao.getCategoriesSync()
+        val budgets = budgetDao.getBudgetsForMonthSync(currentMonth, currentYear)
 
-        val txns = transactionDao.getTransactionsBetween(startOfMonth, endOfMonth).first()
-        val cats = categoryDao.getAllCategories().first()
-        val budgets = budgetDao.getBudgetsForMonth(currentMonth, currentYear).first()
+        // ── Essential category IDs: read from SharedPreferences just like Dashboard ──
+        val financePrefs = context.getSharedPreferences("finance_prefs", Context.MODE_PRIVATE)
+        val savedEssentialIds = financePrefs.getStringSet("essential_cats", emptySet())
+            ?.mapNotNull { it.toIntOrNull() }?.toSet() ?: emptySet()
+        val essentialCatIds = if (savedEssentialIds.isEmpty()) {
+            cats.filter { it.isEssential }.map { it.id }
+        } else {
+            savedEssentialIds.toList()
+        }
 
-        val essentialCatIds = cats.filter { it.isEssential }.map { it.id }.toSet()
-        val essentialBudget = budgets.filter { it.categoryId in essentialCatIds }.sumOf { it.amount }
-        
-        val essentialSpentToday = txns.filter { 
-            it.timestamp >= todayStart && it.categoryId in essentialCatIds && it.type == "Debit" 
+        // ── EXACT Dashboard calculation (DashboardScreen.kt lines 98-114) ──
+        val essentialBudget = budgets
+            .filter { it.categoryId in essentialCatIds }
+            .sumOf { it.amount }
+
+        val essentialSpentTillYesterday = transactions.filter {
+            it.timestamp >= monthStart && it.timestamp < todayStart &&
+                    it.categoryId in essentialCatIds && it.type == "Debit"
         }.sumOf { it.amount }
 
-        var todaysAllowance = 0.0
-        var dailyBudgetMax = 1.0
+        val dailyBudget = (essentialBudget - essentialSpentTillYesterday) / remainingDaysIncludingToday
 
-        if (budgets.isNotEmpty()) {
-            val essentialSpentTillYesterday = txns.filter { 
-                it.timestamp < todayStart && it.categoryId in essentialCatIds && it.type == "Debit" 
-            }.sumOf { it.amount }
+        val essentialSpentToday = transactions.filter {
+            it.timestamp >= todayStart && it.categoryId in essentialCatIds && it.type == "Debit"
+        }.sumOf { it.amount }
 
-            val dailyBudget = (essentialBudget - essentialSpentTillYesterday) / remainingDaysIncludingToday
-            dailyBudgetMax = dailyBudget.coerceAtLeast(1.0)
-            
-            todaysAllowance = dailyBudget - essentialSpentToday
-        } else {
-            val totalIncome = txns.filter { it.type == "Credit" }.sumOf { it.amount }
-            val totalExpenses = txns.filter { it.type == "Debit" }.sumOf { it.amount }
-            val remaining = totalIncome - totalExpenses
-            
-            val dailyBudget = remaining / remainingDaysIncludingToday
-            dailyBudgetMax = dailyBudget.coerceAtLeast(1.0)
-            
-            todaysAllowance = remaining / remainingDaysIncludingToday
-        }
-        
+        val todaysAllowance = dailyBudget - essentialSpentToday
+        val dailyBudgetMax = dailyBudget.coerceAtLeast(1.0)
+
         provideContent {
             GlanceContent(context, todaysAllowance, essentialSpentToday, dailyBudgetMax)
         }
@@ -129,14 +121,15 @@ fun GlanceContent(context: Context, todaysAllowance: Double, spentToday: Double,
             )
         )
         Text(
-            text = if (todaysAllowance >= 0) "₹${"%.2f".format(todaysAllowance)}" else "₹${"%.2f".format(todaysAllowance)}",
+            text = if (todaysAllowance >= 0) "₹${"%.2f".format(todaysAllowance)}"
+                   else "₹${"%.2f".format(todaysAllowance)}",
             style = TextStyle(
                 color = ColorProvider(if (todaysAllowance >= 0) Color(0xFF01D475) else Color.Red),
                 fontWeight = FontWeight.Bold
             ),
             modifier = GlanceModifier.padding(top = 4.dp, bottom = 8.dp)
         )
-        
+
         androidx.glance.appwidget.LinearProgressIndicator(
             progress = (spentToday / maxBudget).toFloat().coerceIn(0f, 1f),
             modifier = GlanceModifier.fillMaxWidth().padding(bottom = 16.dp),

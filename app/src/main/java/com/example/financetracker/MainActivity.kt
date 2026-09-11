@@ -40,7 +40,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.PointerEventPass
-import androidx.compose.ui.input.pointer.changedToDown
 import androidx.compose.ui.input.pointer.changedToDownIgnoreConsumed
 import com.example.financetracker.data.FinanceDatabase
 import com.example.financetracker.repository.FinanceRepository
@@ -48,51 +47,84 @@ import com.example.financetracker.ui.FinanceViewModel
 import com.example.financetracker.ui.FinanceViewModelFactory
 import com.example.financetracker.ui.MainScreen
 import com.example.financetracker.theme.FinanceTrackerTheme
+import com.example.financetracker.theme.PresetPalettes
+import com.example.financetracker.theme.ColorPalette
 
 class MainActivity : ComponentActivity() {
 
     private val db by lazy { FinanceDatabase.getDatabase(this) }
-    private val repository by lazy { FinanceRepository(applicationContext, db.transactionDao(), db.categoryDao(), db.budgetDao(), db.goalDao()) }
+    private val repository by lazy { FinanceRepository(applicationContext, db.transactionDao(), db.categoryDao(), db.budgetDao(), db.goalDao(), db.importLogDao()) }
     private val viewModel: FinanceViewModel by viewModels(
         factoryProducer = { FinanceViewModelFactory(repository) }
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        
 
         val prefs = getSharedPreferences("app_prefs", android.content.Context.MODE_PRIVATE)
         val openAddDialog = intent.getBooleanExtra("openAddDialog", false)
-        
+
         setContent {
+            val context = androidx.compose.ui.platform.LocalContext.current
+            LaunchedEffect(intent) {
+                if (intent?.action == android.content.Intent.ACTION_VIEW) {
+                    intent.data?.let { uri ->
+                        try {
+                            val text = contentResolver.openInputStream(uri)?.use { it.bufferedReader().readText() }
+                            if (text != null) {
+                                val filename = documentName(contentResolver, uri)
+                                val success = viewModel.importYamlData(text, filename)
+                                if (success) {
+                                    android.widget.Toast.makeText(context, "File imported successfully", android.widget.Toast.LENGTH_SHORT).show()
+                                } else {
+                                    android.widget.Toast.makeText(context, "file is not in proper spacing or format of requred yaml ckeck that format in the yaml input section", android.widget.Toast.LENGTH_LONG).show()
+                                }
+                            }
+                        } catch (e: Exception) {
+                            android.widget.Toast.makeText(context, "file is not in proper spacing or format of requred yaml ckeck that format in the yaml input section", android.widget.Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }
+            }
             var themeMode by remember { mutableStateOf(prefs.getString("theme_mode", "System Default") ?: "System Default") }
-            var themeColorInt by remember { mutableStateOf(prefs.getInt("theme_color", 0)) }
+            var paletteIndex by remember { mutableStateOf(prefs.getInt("palette_index", 0)) }
             var isHapticsEnabled by remember { mutableStateOf(prefs.getBoolean("haptics_enabled", true)) }
-            
+            // Custom palette colors
+            var customC1 by remember { mutableStateOf(prefs.getInt("custom_c1", 0xFF01D475.toInt())) }
+            var customC2 by remember { mutableStateOf(prefs.getInt("custom_c2", 0xFF29B6F6.toInt())) }
+            var customC3 by remember { mutableStateOf(prefs.getInt("custom_c3", 0xFF00BFA5.toInt())) }
+            var customC4 by remember { mutableStateOf(prefs.getInt("custom_c4", 0xFF69F0AE.toInt())) }
+
             // Listen to changes
             DisposableEffect(Unit) {
-                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sharedPreferences, key ->
-                    if (key == "theme_mode") {
-                        themeMode = sharedPreferences.getString("theme_mode", "System Default") ?: "System Default"
-                    } else if (key == "theme_color") {
-                        themeColorInt = sharedPreferences.getInt("theme_color", 0)
-                    } else if (key == "haptics_enabled") {
-                        isHapticsEnabled = sharedPreferences.getBoolean("haptics_enabled", true)
+                val listener = android.content.SharedPreferences.OnSharedPreferenceChangeListener { sp, key ->
+                    when (key) {
+                        "theme_mode" -> themeMode = sp.getString("theme_mode", "System Default") ?: "System Default"
+                        "palette_index" -> paletteIndex = sp.getInt("palette_index", 0)
+                        "haptics_enabled" -> isHapticsEnabled = sp.getBoolean("haptics_enabled", true)
+                        "custom_c1" -> customC1 = sp.getInt("custom_c1", 0xFF01D475.toInt())
+                        "custom_c2" -> customC2 = sp.getInt("custom_c2", 0xFF29B6F6.toInt())
+                        "custom_c3" -> customC3 = sp.getInt("custom_c3", 0xFF00BFA5.toInt())
+                        "custom_c4" -> customC4 = sp.getInt("custom_c4", 0xFF69F0AE.toInt())
                     }
                 }
                 prefs.registerOnSharedPreferenceChangeListener(listener)
                 onDispose { prefs.unregisterOnSharedPreferenceChangeListener(listener) }
             }
-            
+
             val isDark = when (themeMode) {
                 "Dark Mode" -> true
                 "Light Mode" -> false
                 else -> androidx.compose.foundation.isSystemInDarkTheme()
             }
-            
-            val primaryColor = if (themeColorInt != 0) Color(themeColorInt) else null
 
-            FinanceTrackerTheme(darkTheme = isDark, primaryColor = primaryColor) {
+            val palette = if (paletteIndex in PresetPalettes.indices) {
+                PresetPalettes[paletteIndex]
+            } else {
+                ColorPalette("Custom", Color(customC1), Color(customC2), Color(customC3), Color(customC4))
+            }
+
+            FinanceTrackerTheme(darkTheme = isDark, palette = palette) {
                 androidx.compose.runtime.CompositionLocalProvider(com.example.financetracker.theme.LocalHapticEnabled provides isHapticsEnabled) {
 
                 val view = androidx.compose.ui.platform.LocalView.current
@@ -102,7 +134,7 @@ class MainActivity : ComponentActivity() {
                         .pointerInput(isHapticsEnabled) {
                             awaitPointerEventScope {
                                 while (true) {
-                                    val event = awaitPointerEvent(androidx.compose.ui.input.pointer.PointerEventPass.Initial)
+                                    val event = awaitPointerEvent(PointerEventPass.Initial)
                                     val change = event.changes.firstOrNull()
                                     if (change != null) {
                                         if (change.changedToDownIgnoreConsumed()) {
@@ -115,11 +147,11 @@ class MainActivity : ComponentActivity() {
                                     }
                                 }
                             }
-                        }, 
+                        },
                     color = MaterialTheme.colorScheme.background
                 ) {
                     var showSplash by androidx.compose.runtime.saveable.rememberSaveable { mutableStateOf(!openAddDialog) }
-                    
+
                     if (showSplash) {
                         SplashScreen(onTimeout = { showSplash = false })
                     } else {
@@ -135,7 +167,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun SplashScreen(onTimeout: () -> Unit) {
     val scale = remember { Animatable(0f) }
-    
+
     LaunchedEffect(key1 = true) {
         scale.animateTo(
             targetValue = 1f,
@@ -147,7 +179,7 @@ fun SplashScreen(onTimeout: () -> Unit) {
         delay(1000)
         onTimeout()
     }
-    
+
     Box(
         modifier = Modifier.fillMaxSize().background(Color.Black),
         contentAlignment = Alignment.Center
@@ -170,4 +202,21 @@ fun SplashScreen(onTimeout: () -> Unit) {
             )
         }
     }
+}
+
+private fun documentName(contentResolver: android.content.ContentResolver, uri: android.net.Uri): String {
+    var name = "imported_file"
+    try {
+        contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+                if (nameIndex != -1) {
+                    name = cursor.getString(nameIndex)
+                }
+            }
+        }
+    } catch (e: Exception) {
+        // ignore
+    }
+    return name
 }

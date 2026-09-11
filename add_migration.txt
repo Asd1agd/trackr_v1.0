@@ -1,0 +1,9 @@
+
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE transactions ADD COLUMN importId INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE goals ADD COLUMN importId INTEGER DEFAULT NULL")
+        db.execSQL("ALTER TABLE budgets ADD COLUMN importId INTEGER DEFAULT NULL")
+        db.execSQL("CREATE TABLE IF NOT EXISTS `import_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `filename` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)")
+    }
+}

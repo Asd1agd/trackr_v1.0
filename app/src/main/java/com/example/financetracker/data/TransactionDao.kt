@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface TransactionDao {
+    @Query("DELETE FROM transactions WHERE importId = :importId")
+    suspend fun deleteByImportId(importId: Int)
     @Query("SELECT * FROM transactions ORDER BY timestamp DESC")
     fun getAllTransactions(): Flow<List<Transaction>>
 
@@ -25,4 +27,7 @@ interface TransactionDao {
 
     @androidx.room.Delete
     suspend fun delete(transaction: Transaction)
+
+    @Query("SELECT * FROM transactions WHERE timestamp >= :startDate ORDER BY timestamp DESC")
+    suspend fun getTransactionsSinceSync(startDate: Long): List<Transaction>
 }

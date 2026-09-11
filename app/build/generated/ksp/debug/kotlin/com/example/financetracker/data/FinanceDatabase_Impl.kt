@@ -43,16 +43,21 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
     GoalDao_Impl(this)
   }
 
+  private val _importLogDao: Lazy<ImportLogDao> = lazy {
+    ImportLogDao_Impl(this)
+  }
+
   protected override fun createOpenDelegate(): RoomOpenDelegate {
-    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(3,
-        "67a72e401e9394bb307a380a2c6d43df", "e27dad8a159e8858bc9ae2c5ebd75681") {
+    val _openDelegate: RoomOpenDelegate = object : RoomOpenDelegate(4,
+        "bbf4e140430995b4d35070fa28c25418", "cd669b11593635da10945bff16887b5a") {
       public override fun createAllTables(connection: SQLiteConnection) {
-        connection.execSQL("CREATE TABLE IF NOT EXISTS `transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `categoryId` INTEGER, `note` TEXT NOT NULL, `isSubscription` INTEGER NOT NULL, `dueDate` INTEGER)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `transactions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `amount` REAL NOT NULL, `type` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `categoryId` INTEGER, `note` TEXT NOT NULL, `isSubscription` INTEGER NOT NULL, `dueDate` INTEGER, `importId` INTEGER)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS `categories` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `keywords` TEXT NOT NULL, `isEssential` INTEGER NOT NULL)")
-        connection.execSQL("CREATE TABLE IF NOT EXISTS `budgets` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER NOT NULL, `amount` REAL NOT NULL, `month` INTEGER NOT NULL, `year` INTEGER NOT NULL)")
-        connection.execSQL("CREATE TABLE IF NOT EXISTS `goals` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `targetAmount` REAL NOT NULL, `currentAmount` REAL NOT NULL, `targetDate` INTEGER NOT NULL)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `budgets` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `categoryId` INTEGER NOT NULL, `amount` REAL NOT NULL, `month` INTEGER NOT NULL, `year` INTEGER NOT NULL, `importId` INTEGER)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `goals` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `targetAmount` REAL NOT NULL, `currentAmount` REAL NOT NULL, `targetDate` INTEGER NOT NULL, `importId` INTEGER)")
+        connection.execSQL("CREATE TABLE IF NOT EXISTS `import_logs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `filename` TEXT NOT NULL, `timestamp` INTEGER NOT NULL)")
         connection.execSQL("CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)")
-        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '67a72e401e9394bb307a380a2c6d43df')")
+        connection.execSQL("INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bbf4e140430995b4d35070fa28c25418')")
       }
 
       public override fun dropAllTables(connection: SQLiteConnection) {
@@ -60,6 +65,7 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
         connection.execSQL("DROP TABLE IF EXISTS `categories`")
         connection.execSQL("DROP TABLE IF EXISTS `budgets`")
         connection.execSQL("DROP TABLE IF EXISTS `goals`")
+        connection.execSQL("DROP TABLE IF EXISTS `import_logs`")
       }
 
       public override fun onCreate(connection: SQLiteConnection) {
@@ -94,6 +100,8 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
         _columnsTransactions.put("isSubscription", TableInfo.Column("isSubscription", "INTEGER",
             true, 0, null, TableInfo.CREATED_FROM_ENTITY))
         _columnsTransactions.put("dueDate", TableInfo.Column("dueDate", "INTEGER", false, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsTransactions.put("importId", TableInfo.Column("importId", "INTEGER", false, 0, null,
             TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysTransactions: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
         val _indicesTransactions: MutableSet<TableInfo.Index> = mutableSetOf()
@@ -143,6 +151,8 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
             TableInfo.CREATED_FROM_ENTITY))
         _columnsBudgets.put("year", TableInfo.Column("year", "INTEGER", true, 0, null,
             TableInfo.CREATED_FROM_ENTITY))
+        _columnsBudgets.put("importId", TableInfo.Column("importId", "INTEGER", false, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysBudgets: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
         val _indicesBudgets: MutableSet<TableInfo.Index> = mutableSetOf()
         val _infoBudgets: TableInfo = TableInfo("budgets", _columnsBudgets, _foreignKeysBudgets,
@@ -168,6 +178,8 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
             TableInfo.CREATED_FROM_ENTITY))
         _columnsGoals.put("targetDate", TableInfo.Column("targetDate", "INTEGER", true, 0, null,
             TableInfo.CREATED_FROM_ENTITY))
+        _columnsGoals.put("importId", TableInfo.Column("importId", "INTEGER", false, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
         val _foreignKeysGoals: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
         val _indicesGoals: MutableSet<TableInfo.Index> = mutableSetOf()
         val _infoGoals: TableInfo = TableInfo("goals", _columnsGoals, _foreignKeysGoals,
@@ -182,6 +194,27 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
               | Found:
               |""".trimMargin() + _existingGoals)
         }
+        val _columnsImportLogs: MutableMap<String, TableInfo.Column> = mutableMapOf()
+        _columnsImportLogs.put("id", TableInfo.Column("id", "INTEGER", true, 1, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsImportLogs.put("filename", TableInfo.Column("filename", "TEXT", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        _columnsImportLogs.put("timestamp", TableInfo.Column("timestamp", "INTEGER", true, 0, null,
+            TableInfo.CREATED_FROM_ENTITY))
+        val _foreignKeysImportLogs: MutableSet<TableInfo.ForeignKey> = mutableSetOf()
+        val _indicesImportLogs: MutableSet<TableInfo.Index> = mutableSetOf()
+        val _infoImportLogs: TableInfo = TableInfo("import_logs", _columnsImportLogs,
+            _foreignKeysImportLogs, _indicesImportLogs)
+        val _existingImportLogs: TableInfo = read(connection, "import_logs")
+        if (!_infoImportLogs.equals(_existingImportLogs)) {
+          return RoomOpenDelegate.ValidationResult(false, """
+              |import_logs(com.example.financetracker.data.ImportLog).
+              | Expected:
+              |""".trimMargin() + _infoImportLogs + """
+              |
+              | Found:
+              |""".trimMargin() + _existingImportLogs)
+        }
         return RoomOpenDelegate.ValidationResult(true, null)
       }
     }
@@ -192,11 +225,11 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
     val _shadowTablesMap: MutableMap<String, String> = mutableMapOf()
     val _viewTables: MutableMap<String, Set<String>> = mutableMapOf()
     return InvalidationTracker(this, _shadowTablesMap, _viewTables, "transactions", "categories",
-        "budgets", "goals")
+        "budgets", "goals", "import_logs")
   }
 
   public override fun clearAllTables() {
-    super.performClear(false, "transactions", "categories", "budgets", "goals")
+    super.performClear(false, "transactions", "categories", "budgets", "goals", "import_logs")
   }
 
   protected override fun getRequiredTypeConverterClasses(): Map<KClass<*>, List<KClass<*>>> {
@@ -205,6 +238,7 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
     _typeConvertersMap.put(CategoryDao::class, CategoryDao_Impl.getRequiredConverters())
     _typeConvertersMap.put(BudgetDao::class, BudgetDao_Impl.getRequiredConverters())
     _typeConvertersMap.put(GoalDao::class, GoalDao_Impl.getRequiredConverters())
+    _typeConvertersMap.put(ImportLogDao::class, ImportLogDao_Impl.getRequiredConverters())
     return _typeConvertersMap
   }
 
@@ -227,4 +261,6 @@ public class FinanceDatabase_Impl : FinanceDatabase() {
   public override fun budgetDao(): BudgetDao = _budgetDao.value
 
   public override fun goalDao(): GoalDao = _goalDao.value
+
+  public override fun importLogDao(): ImportLogDao = _importLogDao.value
 }

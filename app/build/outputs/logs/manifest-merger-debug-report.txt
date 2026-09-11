@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-40:12
-INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-40:12
-INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-40:12
-INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-40:12
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-50:12
+INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-50:12
+INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-50:12
+INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:2:1-50:12
 MERGED from [androidx.glance:glance-material3:1.0.0] /home/asd/.gradle/caches/9.1.0/transforms/c965b6aff6f146cbb5567d8ddce09556/transformed/glance-material3-1.0.0/AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.glance:glance-appwidget:1.0.0] /home/asd/.gradle/caches/9.1.0/transforms/8b8a98d8398751beb63ee9af1d63bc8b/transformed/glance-appwidget-1.0.0/AndroidManifest.xml:17:1-56:12
 MERGED from [androidx.glance:glance:1.0.0] /home/asd/.gradle/caches/9.1.0/transforms/f72de82dd834f07e6071a4cc7c5d5b7a/transformed/glance-1.0.0/AndroidManifest.xml:2:1-7:12
@@ -115,8 +115,8 @@ ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest
 	android:name
 		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:8:22-78
 application
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:10:5-38:19
-INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:10:5-38:19
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:10:5-48:19
+INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:10:5-48:19
 MERGED from [androidx.glance:glance-appwidget:1.0.0] /home/asd/.gradle/caches/9.1.0/transforms/8b8a98d8398751beb63ee9af1d63bc8b/transformed/glance-appwidget-1.0.0/AndroidManifest.xml:22:5-54:19
 MERGED from [androidx.glance:glance-appwidget:1.0.0] /home/asd/.gradle/caches/9.1.0/transforms/8b8a98d8398751beb63ee9af1d63bc8b/transformed/glance-appwidget-1.0.0/AndroidManifest.xml:22:5-54:19
 MERGED from [androidx.work:work-runtime:2.9.0] /home/asd/.gradle/caches/9.1.0/transforms/a2b022f282e11d43ffc79a83f1c5006d/transformed/work-runtime-2.9.0/AndroidManifest.xml:28:5-143:19
@@ -162,7 +162,7 @@ MERGED from [androidx.versionedparcelable:versionedparcelable:1.1.1] /home/asd/.
 	android:theme
 		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:17:9-52
 activity#com.example.financetracker.MainActivity
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:18:9-25:20
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:18:9-35:20
 	android:exported
 		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:20:13-36
 	android:name
@@ -177,24 +177,40 @@ category#android.intent.category.LAUNCHER
 ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:23:17-77
 	android:name
 		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:23:27-74
+intent-filter#action:name:android.intent.action.VIEW+category:name:android.intent.category.DEFAULT+data:mimeType:application/octet-stream+data:mimeType:application/x-yaml+data:mimeType:text/plain+data:mimeType:text/yaml+data:scheme:content+data:scheme:file
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:25:13-34:29
+action#android.intent.action.VIEW
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:26:17-69
+	android:name
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:26:25-66
+category#android.intent.category.DEFAULT
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:27:17-76
+	android:name
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:27:27-73
+data
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:28:17-55
+	android:scheme
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:32:23-47
+	android:mimeType
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:28:23-52
 receiver#com.example.financetracker.AllowanceWidgetReceiver
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:28:9-37:20
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:38:9-47:20
 	android:exported
-		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:30:13-36
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:40:13-36
 	android:name
-		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:29:13-52
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:39:13-52
 intent-filter#action:name:android.appwidget.action.APPWIDGET_UPDATE
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:31:13-33:29
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:41:13-43:29
 action#android.appwidget.action.APPWIDGET_UPDATE
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:32:17-84
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:42:17-84
 	android:name
-		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:32:25-81
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:42:25-81
 meta-data#android.appwidget.provider
-ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:34:13-36:65
+ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:44:13-46:65
 	android:resource
-		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:36:17-62
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:46:17-62
 	android:name
-		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:35:17-58
+		ADDED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml:45:17-58
 uses-sdk
 INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /home/asd/agy_ws/project_agy/trackr_v1.0/app/src/main/AndroidManifest.xml

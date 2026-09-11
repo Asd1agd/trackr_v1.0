@@ -12,5 +12,6 @@ data class Transaction(
     val categoryId: Int?,
     val note: String,
     val isSubscription: Boolean = false,
-    val dueDate: Long? = null
+    val dueDate: Long? = null,
+    val importId: Int? = null
 )
